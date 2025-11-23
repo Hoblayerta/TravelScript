@@ -860,40 +860,7 @@ npm run dev
 
 ---
 
-## 📊 Prize Qualification
 
-### EVVM Integration ($12,500)
-
-✅ **Custom Service ($5,000)**
-- Custom PrescriptionHub contract deployed on EVVM
-- Dual-doctor verification system
-- Deployed to Flare Coston2
-- Complete documentation
-
-✅ **Best Integration ($7,000)**
-- Zero-knowledge proof system with Semaphore
-- Nullifier-based fraud prevention
-- FDC integration for metadata attestation
-- Real-time event monitoring
-- Production-ready architecture
-
-✅ **Feedback ($500)**
-- Detailed deployment experience
-- Wizard usage documentation
-- Improvement suggestions
-
-### Flare FDC Integration ($10,000 pool)
-
-✅ **Flare Builders**
-- FDC attestations for prescription metadata
-- Cross-border verification system
-- International prescription workflow
-- Complete Flare ecosystem integration
-- Dual-chain validation (EVVM + FDC)
-
-**Total Potential**: **$22,500+**
-
----
 
 ## 🛠️ Project Structure
 
@@ -1123,15 +1090,7 @@ PrescriptionHub ──► EVVM ──► Staking
 
 ---
 
-## 📚 Documentation
 
-- **[DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)** - Complete step-by-step deployment
-- **[QUICKSTART.md](QUICKSTART.md)** - 5-minute quick start guide
-- **[DEPLOYMENT_SUCCESS.md](DEPLOYMENT_SUCCESS.md)** - Deployment status & details
-- **[IMPLEMENTATION_SUMMARY.md](travelscript-app/IMPLEMENTATION_SUMMARY.md)** - Technical implementation details
-- **[READY_TO_DEPLOY.md](READY_TO_DEPLOY.md)** - Pre-deployment checklist
-
----
 
 ## 🎬 Demo Video
 
@@ -1248,7 +1207,7 @@ If this project helped you, please give it a ⭐!
 
 ---
 
-**Built with ❤️ for the Flare Hackathon**
+**Built with ❤️ for the ETH Global Hackathon**
 
 *Enabling trustless international healthcare through zero-knowledge proofs and decentralized verification*
 
