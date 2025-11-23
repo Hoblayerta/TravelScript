@@ -128,41 +128,32 @@ export function updatePrescriptionWithValidation(
   }
 }
 
-// Sign doctor registration with wallet (ERC-191)
-export async function signDoctorRegistration(
-  commitment: string,
-  name: string,
-  licenseNumber: string,
-  country: string
-): Promise<string> {
-  if (typeof window === 'undefined' || !window.ethereum) {
-    throw new Error('Wallet not available');
+// Generate Semaphore ZK proof for prescription operations
+export async function generateDoctorProof(
+  identity: Identity,
+  prescriptionHash: string,
+  doctorGroup: Group
+): Promise<any> {
+  try {
+    const message = BigInt('0x' + prescriptionHash.slice(2, 34));
+    const scope = doctorGroup.root;
+
+    const proof = await generateProof(identity, doctorGroup, message, scope);
+    return proof;
+  } catch (error) {
+    console.error('Error generating doctor proof:', error);
+    throw error;
   }
-
-  const provider = new BrowserProvider(window.ethereum);
-  const signer = await provider.getSigner();
-
-  const message = `TravelScript Doctor Registration\n\nCommitment: ${commitment}\nName: ${name}\nLicense: ${licenseNumber}\nCountry: ${country}\nTimestamp: ${Date.now()}`;
-
-  const signature = await signer.signMessage(message);
-  return signature;
 }
 
-// Verify wallet signature
-export async function verifyDoctorSignature(
-  doctorIdentity: DoctorIdentity
-): Promise<boolean> {
-  if (typeof window === 'undefined') return false;
-
-  try {
-    const { verifyMessage } = await import('ethers');
-
-    const message = `TravelScript Doctor Registration\n\nCommitment: ${doctorIdentity.commitment}\nName: ${doctorIdentity.name}\nLicense: ${doctorIdentity.licenseNumber}\nCountry: ${doctorIdentity.country}\nTimestamp: ${doctorIdentity.registrationTimestamp}`;
-
-    const recoveredAddress = verifyMessage(message, doctorIdentity.walletSignature);
-    return recoveredAddress.toLowerCase() === doctorIdentity.walletAddress.toLowerCase();
-  } catch (error) {
-    console.error('Signature verification failed:', error);
-    return false;
-  }
+// Get nullifier from identity and prescription hash
+export function getDoctorNullifier(identity: Identity, prescriptionHash: string): string {
+  // Nullifier ensures same doctor can't sign same prescription twice
+  const nullifier = ethers.keccak256(
+    ethers.AbiCoder.defaultAbiCoder().encode(
+      ['uint256', 'bytes32'],
+      [identity.commitment, prescriptionHash]
+    )
+  );
+  return nullifier;
 }

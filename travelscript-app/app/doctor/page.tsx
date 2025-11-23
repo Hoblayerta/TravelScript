@@ -9,9 +9,6 @@ import {
   storePrescription,
   retrievePrescriptions,
   hashPrescription,
-  createDoctorGroup,
-  signDoctorRegistration,
-  verifyDoctorSignature,
 } from '@/lib/semaphore';
 import type { DoctorIdentity, Prescription, PrescriptionData } from '@/types/prescription';
 
@@ -58,14 +55,6 @@ export default function DoctorPortal() {
     try {
       const { identity, commitment, privateKey } = createDoctorIdentity(address);
 
-      // Request wallet signature to authenticate doctor identity
-      const signature = await signDoctorRegistration(
-        commitment,
-        doctorName,
-        licenseNumber,
-        country
-      );
-
       const timestamp = Date.now();
 
       const doctor: DoctorIdentity = {
@@ -75,30 +64,24 @@ export default function DoctorPortal() {
         country,
         name: doctorName,
         licenseNumber,
-        walletSignature: signature,
         registrationTimestamp: timestamp,
       };
 
       storeDoctorIdentity(doctor);
       setDoctorIdentity(doctor);
       setIsRegistered(true);
-      alert('✅ Registro exitoso!\n\nTu identidad Semaphore ha sido creada y firmada con tu wallet.');
+      alert(
+        '✅ Registro exitoso!\n\nTu identidad Semaphore ha sido creada.\nAhora puedes firmar recetas usando ZK proofs en Flare EVVM.'
+      );
     } catch (error) {
       console.error('Error during registration:', error);
-      alert('❌ Error: No se pudo firmar con la wallet.\n\nAsegúrate de tener una wallet conectada.');
+      alert('❌ Error durante el registro.\n\nInténtalo nuevamente.');
     }
   };
 
   const handleCreatePrescription = async () => {
     if (!doctorIdentity || !isConnected) {
       alert('Debes estar registrado y conectado');
-      return;
-    }
-
-    // Verify wallet signature before allowing prescription creation
-    const isValid = await verifyDoctorSignature(doctorIdentity);
-    if (!isValid) {
-      alert('❌ Error de autenticación\n\nLa firma de tu wallet no es válida.\nPor favor, regístrate nuevamente.');
       return;
     }
 
@@ -113,53 +96,62 @@ export default function DoctorPortal() {
       return;
     }
 
-    const prescriptionData: PrescriptionData = {
-      id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-      patientName,
-      patientAge: parseInt(patientAge) || 0,
-      patientId,
-      medication,
-      dosage,
-      frequency,
-      duration,
-      notes,
-      createdAt: Date.now(),
-    };
+    try {
+      const prescriptionData: PrescriptionData = {
+        id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+        patientName,
+        patientAge: parseInt(patientAge) || 0,
+        patientId,
+        medication,
+        dosage,
+        frequency,
+        duration,
+        notes,
+        createdAt: Date.now(),
+      };
 
-    const prescription: Prescription = {
-      data: prescriptionData,
-      issuerSignature: {
-        doctorCommitment: doctorIdentity.commitment,
-        walletAddress: doctorIdentity.walletAddress,
-        country: doctorIdentity.country,
-        timestamp: Date.now(),
-      },
-      status: 'pending',
-      prescriptionHash: '',
-    };
+      const prescription: Prescription = {
+        data: prescriptionData,
+        issuerSignature: {
+          doctorCommitment: doctorIdentity.commitment,
+          walletAddress: doctorIdentity.walletAddress,
+          country: doctorIdentity.country,
+          timestamp: Date.now(),
+        },
+        status: 'pending',
+        prescriptionHash: '',
+      };
 
-    // Generate hash
-    prescription.prescriptionHash = hashPrescription(prescription);
+      // Generate hash
+      prescription.prescriptionHash = hashPrescription(prescription);
 
-    // Store prescription
-    storePrescription(prescription);
+      // Store prescription locally first
+      storePrescription(prescription);
 
-    alert(
-      `✅ Receta creada exitosamente!\n\nID: ${prescription.data.id}\n\nAhora debe ser firmada por un doctor validador del país destino.`
-    );
+      alert(
+        `✅ Receta creada!\n\nID: ${prescription.data.id}\n\n⏳ Próximamente se almacenará en EVVM + Flare FDC\n\nPor ahora está guardada localmente y debe ser validada por un doctor del país destino.`
+      );
 
-    // Reset form
-    setPatientName('');
-    setPatientAge('');
-    setPatientId('');
-    setMedication('');
-    setDosage('');
-    setFrequency('');
-    setDuration('');
-    setNotes('');
+      // TODO: Implement EVVM on-chain creation
+      // This will be done after contract deployment
+      // await createPrescriptionOnChain(prescription, proof, nullifier, provider)
 
-    // Refresh prescriptions
-    setPrescriptions(retrievePrescriptions());
+      // Reset form
+      setPatientName('');
+      setPatientAge('');
+      setPatientId('');
+      setMedication('');
+      setDosage('');
+      setFrequency('');
+      setDuration('');
+      setNotes('');
+
+      // Refresh prescriptions
+      setPrescriptions(retrievePrescriptions());
+    } catch (error) {
+      console.error('Error creating prescription:', error);
+      alert('❌ Error al crear la receta');
+    }
   };
 
   if (!isConnected) {

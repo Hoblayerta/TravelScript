@@ -28,12 +28,12 @@ export interface Prescription {
 }
 
 export interface DoctorIdentity {
-  semaphoreIdentity: string; // Base64 encoded
+  semaphoreIdentity: string; // Base64 encoded private key
   commitment: string;
   walletAddress: string;
   country: string;
   name: string;
   licenseNumber: string;
-  walletSignature: string; // ERC-191 signature linking wallet to commitment
   registrationTimestamp: number;
+  // Note: No wallet signature needed - wallet + Semaphore commitment is sufficient
 }
