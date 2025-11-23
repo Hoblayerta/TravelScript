@@ -37,7 +37,7 @@ const PRESCRIPTION_HUB_ABI = [
 /**
  * Get PrescriptionHub contract instance
  */
-export function getPrescriptionHubContract(
+export async function getPrescriptionHubContract(
   provider: BrowserProvider,
   withSigner: boolean = false
 ) {
@@ -48,7 +48,8 @@ export function getPrescriptionHubContract(
   );
 
   if (withSigner) {
-    return contract.connect(provider.getSigner()) as ethers.Contract;
+    const signer = await provider.getSigner(); // Corrección: await para obtener el signer
+    return contract.connect(signer) as ethers.Contract;
   }
 
   return contract;
@@ -64,7 +65,7 @@ export async function createPrescriptionOnChain(
   provider: BrowserProvider
 ): Promise<string> {
   try {
-    const contract = getPrescriptionHubContract(provider, true);
+    const contract = await getPrescriptionHubContract(provider, true); // Corrección: await
 
     // Encode prescription data
     const prescriptionData = ethers.AbiCoder.defaultAbiCoder().encode(
@@ -112,7 +113,7 @@ export async function validatePrescriptionOnChain(
   provider: BrowserProvider
 ): Promise<string> {
   try {
-    const contract = getPrescriptionHubContract(provider, true);
+    const contract = await getPrescriptionHubContract(provider, true); // Corrección: await
 
     const proofArray = semaphoreProof.proof;
 
@@ -142,7 +143,7 @@ export async function attestPrescriptionOnChain(
   provider: BrowserProvider
 ): Promise<string> {
   try {
-    const contract = getPrescriptionHubContract(provider, true);
+    const contract = await getPrescriptionHubContract(provider, true); // Corrección: await
 
     const tx = await contract.attestPrescription(prescriptionId, fdcAttestationHash);
 
@@ -165,7 +166,7 @@ export async function canFillPrescription(
   provider: BrowserProvider
 ): Promise<{ canFill: boolean; reason: string }> {
   try {
-    const contract = getPrescriptionHubContract(provider, false);
+    const contract = await getPrescriptionHubContract(provider, false); // Corrección: await
 
     const [canFill, reason] = await contract.canFillPrescription(prescriptionId);
 
@@ -184,7 +185,7 @@ export async function getPrescriptionFromChain(
   provider: BrowserProvider
 ): Promise<any> {
   try {
-    const contract = getPrescriptionHubContract(provider, false);
+    const contract = await getPrescriptionHubContract(provider, false); // Corrección: await
 
     const prescription = await contract.prescriptions(prescriptionId);
 
@@ -257,42 +258,44 @@ export async function completePrescriptionFlow(
 /**
  * Listen to prescription events
  */
-export function subscribeToPrescrip tionEvents(
+export function subscribeToPrescriptionEvents(
   provider: BrowserProvider,
   callback: (event: any) => void
 ) {
-  const contract = getPrescriptionHubContract(provider, false);
-
-  contract.on('PrescriptionCreated', (prescriptionId, hash, nullifier, patient, event) => {
-    callback({
-      type: 'created',
-      prescriptionId,
-      hash,
-      nullifier,
-      patient,
-      event,
+  getPrescriptionHubContract(provider, false).then(contract => {
+    contract.on('PrescriptionCreated', (prescriptionId, hash, nullifier, patient, event) => {
+      callback({
+        type: 'created',
+        prescriptionId,
+        hash,
+        nullifier,
+        patient,
+        event,
+      });
     });
-  });
 
-  contract.on('PrescriptionValidated', (prescriptionId, nullifier, event) => {
-    callback({
-      type: 'validated',
-      prescriptionId,
-      nullifier,
-      event,
+    contract.on('PrescriptionValidated', (prescriptionId, nullifier, event) => {
+      callback({
+        type: 'validated',
+        prescriptionId,
+        nullifier,
+        event,
+      });
     });
-  });
 
-  contract.on('PrescriptionAttested', (prescriptionId, fdcHash, event) => {
-    callback({
-      type: 'attested',
-      prescriptionId,
-      fdcHash,
-      event,
+    contract.on('PrescriptionAttested', (prescriptionId, fdcHash, event) => {
+      callback({
+        type: 'attested',
+        prescriptionId,
+        fdcHash,
+        event,
+      });
     });
   });
 
   return () => {
-    contract.removeAllListeners();
+    getPrescriptionHubContract(provider, false).then(contract => {
+      contract.removeAllListeners();
+    });
   };
 }

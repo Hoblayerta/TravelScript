@@ -59,24 +59,16 @@ export class EVVMProcessor {
   /**
    * Get PrescriptionHub contract instance
    */
-  private getPrescriptionHubContract(withSigner: boolean = false) {
-    const contract = new ethers.Contract(
-      this.prescriptionHubAddress,
-      PRESCRIPTION_HUB_ABI,
-      this.provider
-    );
-
-    if (withSigner) {
-      return contract.connect(this.provider.getSigner()) as Promise<ethers.Contract>;
-    }
-
-    return contract;
+  private async getPrescriptionHubContract(withSigner: boolean = false) {
+    const { getPrescriptionHubContract } = await import('./prescription-contract');
+    // Usa el import centralizado y espera el signer correctamente
+    return getPrescriptionHubContract(this.provider, withSigner);
   }
 
   /**
    * Get EVVM contract instance
    */
-  private getEVVMContract(withSigner: boolean = false) {
+  private async getEVVMContract(withSigner: boolean = false) {
     const contract = new ethers.Contract(
       this.evvmAddress,
       EVVM_ABI,
@@ -84,7 +76,8 @@ export class EVVMProcessor {
     );
 
     if (withSigner) {
-      return contract.connect(this.provider.getSigner()) as Promise<ethers.Contract>;
+      const signer = await this.provider.getSigner();
+      return contract.connect(signer);
     }
 
     return contract;
@@ -129,7 +122,7 @@ export class EVVMProcessor {
       onProgress?.('Submitting to blockchain...');
 
       const contract = await this.getPrescriptionHubContract(true);
-
+      // @ts-ignore
       const tx = await contract.createPrescription(
         prescription.data.id,
         prescriptionData,
@@ -177,7 +170,7 @@ export class EVVMProcessor {
       onProgress?.('Submitting validation to blockchain...');
 
       const contract = await this.getPrescriptionHubContract(true);
-
+      // @ts-ignore
       const tx = await contract.validatePrescription(
         prescriptionId,
         proofArray,
@@ -241,7 +234,7 @@ export class EVVMProcessor {
       onProgress?.('Storing FDC attestation on-chain...');
 
       const contract = await this.getPrescriptionHubContract(true);
-
+      // @ts-ignore
       const tx = await contract.attestPrescription(
         prescription.data.id,
         attestationHash
@@ -275,10 +268,9 @@ export class EVVMProcessor {
     prescriptionId: string
   ): Promise<{ canFill: boolean; reason: string }> {
     try {
-      const contract = this.getPrescriptionHubContract(false);
-
+      const contract = await this.getPrescriptionHubContract(false);
+      // @ts-ignore
       const [canFill, reason] = await contract.canFillPrescription(prescriptionId);
-
       return { canFill, reason };
     } catch (error) {
       console.error('[EVVM] Can fill prescription error:', error);
@@ -300,10 +292,9 @@ export class EVVMProcessor {
     fdcAttestationHash: string;
   }> {
     try {
-      const contract = this.getPrescriptionHubContract(false);
-
+      const contract = await this.getPrescriptionHubContract(false);
+      // @ts-ignore
       const result = await contract.prescriptions(prescriptionId);
-
       return {
         prescriptionHash: result[0],
         doctor1Nullifier: result[1],
@@ -329,17 +320,12 @@ export class EVVMProcessor {
   ): Promise<{ txHash: string }> {
     try {
       onProgress?.('Revoking prescription...');
-
       const contract = await this.getPrescriptionHubContract(true);
-
+      // @ts-ignore
       const tx = await contract.revokePrescription(prescriptionId);
-
       onProgress?.('Waiting for confirmation...', { txHash: tx.hash });
-
       const receipt = await tx.wait();
-
       onProgress?.('Prescription revoked successfully!', { txHash: receipt.hash });
-
       return {
         txHash: receipt.hash,
       };
@@ -406,45 +392,47 @@ export class EVVMProcessor {
    * Subscribe to prescription events
    */
   subscribeToEvents(callback: (event: any) => void): () => void {
-    const contract = this.getPrescriptionHubContract(false);
+    this.getPrescriptionHubContract(false).then(contract => {
+      contract.on(
+        'PrescriptionCreated',
+        (prescriptionId, hash, nullifier, patient, event) => {
+          callback({
+            type: 'created',
+            prescriptionId,
+            hash,
+            nullifier,
+            patient,
+            blockNumber: event.log.blockNumber,
+            txHash: event.log.transactionHash,
+          });
+        }
+      );
 
-    contract.on(
-      'PrescriptionCreated',
-      (prescriptionId, hash, nullifier, patient, event) => {
+      contract.on('PrescriptionValidated', (prescriptionId, nullifier, event) => {
         callback({
-          type: 'created',
+          type: 'validated',
           prescriptionId,
-          hash,
           nullifier,
-          patient,
           blockNumber: event.log.blockNumber,
           txHash: event.log.transactionHash,
         });
-      }
-    );
-
-    contract.on('PrescriptionValidated', (prescriptionId, nullifier, event) => {
-      callback({
-        type: 'validated',
-        prescriptionId,
-        nullifier,
-        blockNumber: event.log.blockNumber,
-        txHash: event.log.transactionHash,
       });
-    });
 
-    contract.on('PrescriptionAttested', (prescriptionId, fdcHash, event) => {
-      callback({
-        type: 'attested',
-        prescriptionId,
-        fdcHash,
-        blockNumber: event.log.blockNumber,
-        txHash: event.log.transactionHash,
+      contract.on('PrescriptionAttested', (prescriptionId, fdcHash, event) => {
+        callback({
+          type: 'attested',
+          prescriptionId,
+          fdcHash,
+          blockNumber: event.log.blockNumber,
+          txHash: event.log.transactionHash,
+        });
       });
     });
 
     return () => {
-      contract.removeAllListeners();
+      this.getPrescriptionHubContract(false).then(contract => {
+        contract.removeAllListeners();
+      });
     };
   }
 }

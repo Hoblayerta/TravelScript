@@ -1,7 +1,7 @@
 import { Identity } from '@semaphore-protocol/identity';
 import { Group } from '@semaphore-protocol/group';
 import { generateProof, verifyProof } from '@semaphore-protocol/proof';
-import { BrowserProvider } from 'ethers';
+import { ethers, BrowserProvider } from 'ethers';
 import type { DoctorIdentity, Prescription } from '@/types/prescription';
 
 // Create a new doctor identity

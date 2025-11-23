@@ -6,8 +6,7 @@ import { Chain } from '@reown/appkit/networks';
 
 export const flareCoston2: Chain = {
   id: 114,
-  name: 'Flare Testnet Coston2',
-  network: 'coston2',
+  name: 'Flare Testnet Coston2', 
   nativeCurrency: {
     name: 'Coston2 Flare',
     symbol: 'C2FLR',
@@ -29,7 +28,6 @@ export const flareCoston2: Chain = {
     },
   },
   testnet: true,
-  chainNamespace: 'eip155',
 };
 
 // Contract addresses on Flare Coston2

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Identity } from "@semaphore-protocol/identity";
 import { Group } from "@semaphore-protocol/group";
 import { generateProof } from "@semaphore-protocol/proof";
-import { ethers } from "ethers";
+import { ethers, BrowserProvider } from "ethers";
 
 export type Doctor = {
   address: string;
@@ -16,8 +16,8 @@ export function useDoctorRegistration() {
   const [identity, setIdentity] = useState<Identity | null>(null);
 
   // Registro: conecta wallet y genera identidad Semaphore
-  async function registerDoctor(name: string, license: string, provider: ethers.providers.Web3Provider) {
-    const signer = provider.getSigner();
+  async function registerDoctor(name: string, license: string, provider: BrowserProvider) {
+    const signer = await provider.getSigner();
     const address = await signer.getAddress();
     const identity = new Identity();
     setIdentity(identity);
@@ -30,20 +30,20 @@ export function useDoctorRegistration() {
   }
 
   // Firma receta con wallet
-  async function signPrescription(prescriptionData: any, provider: ethers.providers.Web3Provider) {
+  async function signPrescription(prescriptionData: any, provider: BrowserProvider) {
     if (!doctor) throw new Error("Doctor not registered");
-    const signer = provider.getSigner();
+    const signer = await provider.getSigner();
     const message = JSON.stringify({ ...prescriptionData, doctorAddress: doctor.address, doctorSemaphoreCommitment: doctor.semaphoreCommitment });
     const signature = await signer.signMessage(message);
     return { ...prescriptionData, doctorAddress: doctor.address, doctorSemaphoreCommitment: doctor.semaphoreCommitment, doctorSignature: signature };
   }
 
   // Valida receta: genera prueba ZK y firma
-  async function validatePrescription(prescription: any, allCommitments: string[], provider: ethers.providers.Web3Provider) {
+  async function validatePrescription(prescription: any, allCommitments: string[], provider: BrowserProvider) {
     if (!identity || !doctor) throw new Error("Doctor not registered");
     const group = new Group(allCommitments);
     const proof = await generateProof(identity, group, 1, group.root);
-    const signer = provider.getSigner();
+    const signer = await provider.getSigner();
     const message = JSON.stringify(prescription);
     const validatorSignature = await signer.signMessage(message);
     return { ...prescription, validatorAddress: doctor.address, validatorSemaphoreProof: proof, validatorSignature };
