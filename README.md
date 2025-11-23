@@ -1116,9 +1116,7 @@ Coming soon: Full demonstration of the complete flow
 - [x] Deployment to Coston2
 
 ### Phase 2: Enhancement
-- [ ] Deploy real Semaphore contracts
 - [ ] IPFS metadata storage (replace localStorage)
-- [ ] Backend API for data persistence
 - [ ] Mobile application (React Native)
 - [ ] Prescription expiration logic
 - [ ] Email/SMS notifications
@@ -1168,26 +1166,13 @@ MIT License - see [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
-- **Flare Network** - For EVVM infrastructure and FDC technology
+- **Flare Network** - For infrastructure and FDC technology
+-  **EVVM ** - For EVVM infrastructure and  technology
 - **Semaphore Protocol** - For zero-knowledge proof system
 - **OpenZeppelin** - For smart contract libraries
 - **Reown (WalletConnect)** - For wallet integration
 - **Next.js Team** - For the amazing React framework
 
----
-
-## 📞 Contact & Support
-
-- **Project**: TravelScript
-- **Website**: https://travelscript.health (coming soon)
-- **Email**: contact@travelscript.health
-- **Twitter**: @TravelScriptHQ
-- **Discord**: Coming soon
-
-### Support Resources
-- Documentation: https://github.com/yourusername/travelscript/docs
-- Issues: https://github.com/yourusername/travelscript/issues
-- Discussions: https://github.com/yourusername/travelscript/discussions
 
 ---
 
